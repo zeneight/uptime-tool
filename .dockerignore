@@ -17,6 +17,8 @@ README.md
 /.github
 package-lock.json
 app.json
+CODE_OF_CONDUCT.md
+CONTRIBUTING.md
 
 ### .gitignore content (commented rules are duplicated)
 

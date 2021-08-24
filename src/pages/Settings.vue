@@ -209,4 +209,9 @@ export default {
         background-color: var(--background-4);
         color: var(--main-font-color);
     }
+    .btn-check:active + .btn-outline-primary,
+    .btn-check:checked + .btn-outline-primary,
+    .btn-check:hover + .btn-outline-primary {
+        color: #000;
+    }
 </style>

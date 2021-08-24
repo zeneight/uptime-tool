@@ -84,40 +84,78 @@ class Notification {
 
         } else if (notification.type === "discord") {
             try {
+                const discordDisplayName = notification.discordUsername || "Uptime Kuma";
+
                 // If heartbeatJSON is null, assume we're testing.
                 if (heartbeatJSON == null) {
-                    let data = {
-                        username: "Uptime-Kuma",
+                    let discordtestdata = {
+                        username: discordDisplayName,
                         content: msg,
                     }
-                    await axios.post(notification.discordWebhookUrl, data)
+                    await axios.post(notification.discordWebhookUrl, discordtestdata)
                     return okMsg;
                 }
                 // If heartbeatJSON is not null, we go into the normal alerting loop.
                 if (heartbeatJSON["status"] == 0) {
-                    var alertColor = "16711680";
+                    let discorddowndata = {
+                        username: discordDisplayName,
+                        embeds: [{
+                            title: "❌ One of your services went down. ❌",
+                            color: 16711680,
+                            timestamp: heartbeatJSON["time"],
+                            fields: [
+                                {
+                                    name: "Service Name",
+                                    value: monitorJSON["name"],
+                                },
+                                {
+                                    name: "Service URL",
+                                    value: monitorJSON["url"],
+                                },
+                                {
+                                    name: "Time (UTC)",
+                                    value: heartbeatJSON["time"],
+                                },
+                                {
+                                    name: "Error",
+                                    value: heartbeatJSON["msg"],
+                                },
+                            ],
+                        }],
+                    }
+                    await axios.post(notification.discordWebhookUrl, discorddowndata)
+                    return okMsg;
+
                 } else if (heartbeatJSON["status"] == 1) {
-                    var alertColor = "65280";
+                    let discordupdata = {
+                        username: discordDisplayName,
+                        embeds: [{
+                            title: "✅ Your service " + monitorJSON["name"] + " is up! ✅",
+                            color: 65280,
+                            timestamp: heartbeatJSON["time"],
+                            fields: [
+                                {
+                                    name: "Service Name",
+                                    value: monitorJSON["name"],
+                                },
+                                {
+                                    name: "Service URL",
+                                    value: "[Visit Service](" + monitorJSON["url"] + ")",
+                                },
+                                {
+                                    name: "Time (UTC)",
+                                    value: heartbeatJSON["time"],
+                                },
+                                {
+                                    name: "Ping",
+                                    value: heartbeatJSON["ping"] + "ms",
+                                },
+                            ],
+                        }],
+                    }
+                    await axios.post(notification.discordWebhookUrl, discordupdata)
+                    return okMsg;
                 }
-                let data = {
-                    username: "Uptime-Kuma",
-                    embeds: [{
-                        title: "Uptime-Kuma Alert",
-                        color: alertColor,
-                        fields: [
-                            {
-                                name: "Time (UTC)",
-                                value: heartbeatJSON["time"],
-                            },
-                            {
-                                name: "Message",
-                                value: msg,
-                            },
-                        ],
-                    }],
-                }
-                await axios.post(notification.discordWebhookUrl, data)
-                return okMsg;
             } catch (error) {
                 throwGeneralAxiosError(error)
             }
@@ -136,6 +174,7 @@ class Notification {
             } catch (error) {
                 throwGeneralAxiosError(error)
             }
+
         } else if (notification.type === "pushy") {
             try {
                 await axios.post(`https://api.pushy.me/push?api_key=${notification.pushyAPIKey}`, {
@@ -149,6 +188,34 @@ class Notification {
                         "sound": "ping.aiff"
                     }
                 })
+                return true;
+            } catch (error) {
+                console.log(error)
+                return false;
+            }
+        } else if (notification.type === "octopush") {
+            try {
+                let config = {
+                    headers: {
+                        "api-key": notification.octopushAPIKey,
+                        "api-login": notification.octopushLogin,
+                        "cache-control": "no-cache"
+                    }
+                };
+                let data = {
+                    "recipients": [
+                        {
+                            "phone_number": notification.octopushPhoneNumber
+                        }
+                    ],
+                    //octopush not supporting non ascii char
+                    "text": msg.replace(/[^\x00-\x7F]/g, ""),
+                    "type": notification.octopushSMSType,
+                    "purpose": "alert",
+                    "sender": notification.octopushSenderName
+                };
+
+                await axios.post("https://api.octopush.com/v1/public/sms-campaign/send", data, config)
                 return true;
             } catch (error) {
                 console.log(error)
@@ -248,10 +315,6 @@ class Notification {
                 throwGeneralAxiosError(error)
             }
 
-        } else if (notification.type === "apprise") {
-
-            return Notification.apprise(notification, msg)
-
         } else if (notification.type === "lunasea") {
             let lunaseadevice = "https://notify.lunasea.app/v1/custom/device/" + notification.lunaseaDevice
 
@@ -287,6 +350,88 @@ class Notification {
                 throwGeneralAxiosError(error)
             }
 
+        } else if (notification.type === "pushbullet") {
+            try {
+                let pushbulletUrl = "https://api.pushbullet.com/v2/pushes";
+                let config = {
+                    headers: {
+                        "Access-Token": notification.pushbulletAccessToken,
+                        "Content-Type": "application/json"
+                    }
+                };
+                if (heartbeatJSON == null) {
+                    let testdata = {
+                        "type": "note",
+                        "title": "Uptime Kuma Alert",
+                        "body": "Testing Successful.",
+                    }
+                    await axios.post(pushbulletUrl, testdata, config)
+                } else if (heartbeatJSON["status"] == 0) {
+                    let downdata = {
+                        "type": "note",
+                        "title": "UptimeKuma Alert:" + monitorJSON["name"],
+                        "body": "[🔴 Down]" + heartbeatJSON["msg"] + "\nTime (UTC):" + heartbeatJSON["time"],
+                    }
+                    await axios.post(pushbulletUrl, downdata, config)
+                } else if (heartbeatJSON["status"] == 1) {
+                    let updata = {
+                        "type": "note",
+                        "title": "UptimeKuma Alert:" + monitorJSON["name"],
+                        "body": "[✅ Up]" + heartbeatJSON["msg"] + "\nTime (UTC):" + heartbeatJSON["time"],
+                    }
+                    await axios.post(pushbulletUrl, updata, config)
+                }
+                return okMsg;
+            } catch (error) {
+                throwGeneralAxiosError(error)
+            }
+        } else if (notification.type === "line") {
+            try {
+                let lineAPIUrl = "https://api.line.me/v2/bot/message/push";
+                let config = {
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + notification.lineChannelAccessToken
+                    }
+                };
+                if (heartbeatJSON == null) {
+                    let testMessage = {
+                        "to": notification.lineUserID,
+                        "messages": [
+                            {
+                                "type": "text",
+                                "text": "Test Successful!"
+                            }
+                        ]
+                    }
+                    await axios.post(lineAPIUrl, testMessage, config)
+                } else if (heartbeatJSON["status"] == 0) {
+                    let downMessage = {
+                        "to": notification.lineUserID,
+                        "messages": [
+                            {
+                                "type": "text",
+                                "text": "UptimeKuma Alert: [🔴 Down]\n" + "Name: " + monitorJSON["name"] + " \n" + heartbeatJSON["msg"] + "\nTime (UTC): " + heartbeatJSON["time"]
+                            }
+                        ]
+                    }
+                    await axios.post(lineAPIUrl, downMessage, config)
+                } else if (heartbeatJSON["status"] == 1) {
+                    let upMessage = {
+                        "to": notification.lineUserID,
+                        "messages": [
+                            {
+                                "type": "text",
+                                "text": "UptimeKuma Alert: [✅ Up]\n" + "Name: " + monitorJSON["name"] + " \n" + heartbeatJSON["msg"] + "\nTime (UTC): " + heartbeatJSON["time"]
+                            }
+                        ]
+                    }
+                    await axios.post(lineAPIUrl, upMessage, config)
+                }
+                return okMsg;
+            } catch (error) {
+                throwGeneralAxiosError(error)
+            }
         } else {
             throw new Error("Notification type is not supported")
         }
@@ -330,15 +475,21 @@ class Notification {
 
     static async smtp(notification, msg) {
 
-        let transporter = nodemailer.createTransport({
+        const config = {
             host: notification.smtpHost,
             port: notification.smtpPort,
             secure: notification.smtpSecure,
-            auth: {
+        };
+
+        // Should fix the issue in https://github.com/louislam/uptime-kuma/issues/26#issuecomment-896373904
+        if (notification.smtpUsername || notification.smtpPassword) {
+            config.auth = {
                 user: notification.smtpUsername,
                 pass: notification.smtpPassword,
-            },
-        });
+            };
+        }
+
+        let transporter = nodemailer.createTransport(config);
 
         // send mail with defined transport object
         await transporter.sendMail({
@@ -349,29 +500,6 @@ class Notification {
         });
 
         return "Sent Successfully.";
-    }
-
-    static async apprise(notification, msg) {
-        let s = child_process.spawnSync("apprise", [ "-vv", "-b", msg, notification.appriseURL])
-
-        let output = (s.stdout) ? s.stdout.toString() : "ERROR: maybe apprise not found";
-
-        if (output) {
-
-            if (! output.includes("ERROR")) {
-                return "Sent Successfully";
-            }
-
-            throw new Error(output)
-        } else {
-            return ""
-        }
-    }
-
-    static checkApprise() {
-        let commandExistsSync = require("command-exists").sync;
-        let exists = commandExistsSync("apprise");
-        return exists;
     }
 
 }

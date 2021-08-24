@@ -1,4 +1,3 @@
-import dayjs from "dayjs";
 import { io } from "socket.io-client";
 import { useToast } from "vue-toastification";
 const toast = useToast()
@@ -17,7 +16,6 @@ export default {
                 connectCount: 0,
             },
             remember: (localStorage.remember !== "0"),
-            userTimezone: localStorage.timezone || "auto",
             allowLoginDialog: false,        // Allowed to show login dialog, but "loggedIn" have to be true too. This exists because prevent the login dialog show 0.1s in first before the socket server auth-ed.
             loggedIn: false,
             monitorList: { },
@@ -27,9 +25,7 @@ export default {
             uptimeList: { },
             certInfoList: {},
             notificationList: [],
-            windowWidth: window.innerWidth,
-            showListMobile: false,
-            connectionErrorMsg: "Cannot connect to the socket server. Reconnecting..."
+            connectionErrorMsg: "Cannot connect to the socket server. Reconnecting...",
         }
     },
 
@@ -189,14 +185,6 @@ export default {
 
     methods: {
 
-        cancelActiveList() {
-            this.$root.showListMobile = false;
-        },
-
-        onResize() {
-            this.windowWidth = window.innerWidth;
-        },
-
         storage() {
             return (this.remember) ? localStorage : sessionStorage;
         },
@@ -269,19 +257,6 @@ export default {
     },
 
     computed: {
-
-        isMobile() {
-            return this.windowWidth <= 767.98;
-        },
-
-        timezone() {
-
-            if (this.userTimezone === "auto") {
-                return dayjs.tz.guess()
-            }
-
-            return this.userTimezone
-        },
 
         lastHeartbeatList() {
             let result = {}

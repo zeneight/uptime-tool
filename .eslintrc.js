@@ -16,6 +16,9 @@ module.exports = {
         requireConfigFile: false,
     },
     rules: {
+        "camelcase": ["warn", {
+            "properties": "never"
+        }],
         // override/add rules settings here, such as:
         // 'vue/no-unused-vars': 'error'
         "no-unused-vars": "warn",
@@ -35,6 +38,11 @@ module.exports = {
         "vue/html-self-closing": "off",
         "no-multi-spaces": ["error", {
             ignoreEOLComments: true,
+        }],
+        "space-before-function-paren": ["error", {
+            "anonymous": "always",
+            "named": "never",
+            "asyncArrow": "always"
         }],
         "curly": "error",
         "object-curly-spacing": ["error", "always"],
@@ -62,12 +70,13 @@ module.exports = {
             exceptAfterSingleLine: true,
         }],
         "no-unneeded-ternary": "error",
-        "no-else-return": ["error", {
-            "allowElseIf": false,
-        }],
         "array-bracket-newline": ["error", "consistent"],
         "eol-last": ["error", "always"],
         //'prefer-template': 'error',
         "comma-dangle": ["warn", "only-multiline"],
+        "no-empty": ["error", {
+            "allowEmptyCatch": true
+        }],
+        "no-control-regex": "off"
     },
 }

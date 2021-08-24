@@ -1,16 +1,45 @@
 const fs = require("fs");
-const { sleep } = require("../src/util");
 const { R } = require("redbean-node");
-const {
-    setSetting, setting,
-} = require("./util-server");
+const { setSetting, setting } = require("./util-server");
 
 class Database {
 
     static templatePath = "./db/kuma.db"
     static path = "./data/kuma.db";
-    static latestVersion = 4;
+    static latestVersion = 6;
     static noReject = true;
+    static sqliteInstance = null;
+
+    static async connect() {
+        const acquireConnectionTimeout = 120 * 1000;
+
+        R.useBetterSQLite3 = true;
+        R.betterSQLite3Options.timeout = acquireConnectionTimeout;
+
+        R.setup("sqlite", {
+            filename: Database.path,
+            useNullAsDefault: true,
+            acquireConnectionTimeout: acquireConnectionTimeout,
+        }, {
+            min: 1,
+            max: 1,
+            idleTimeoutMillis: 120 * 1000,
+            propagateCreateError: false,
+            acquireTimeoutMillis: acquireConnectionTimeout,
+        });
+
+        if (process.env.SQL_LOG === "1") {
+            R.debug(true);
+        }
+
+        // Auto map the model to a bean object
+        R.freeze(true)
+        await R.autoloadModels("./server/model");
+
+        // Change to WAL
+        await R.exec("PRAGMA journal_mode = WAL");
+        console.log(await R.getAll("PRAGMA journal_mode"));
+    }
 
     static async patch() {
         let version = parseInt(await setting("database_version"));
@@ -24,12 +53,24 @@ class Database {
 
         if (version === this.latestVersion) {
             console.info("Database no need to patch");
+        } else if (version > this.latestVersion) {
+            console.info("Warning: Database version is newer than expected");
         } else {
             console.info("Database patch is needed")
 
             console.info("Backup the db")
             const backupPath = "./data/kuma.db.bak" + version;
             fs.copyFileSync(Database.path, backupPath);
+
+            const shmPath = Database.path + "-shm";
+            if (fs.existsSync(shmPath)) {
+                fs.copyFileSync(shmPath, shmPath + ".bak" + version);
+            }
+
+            const walPath = Database.path + "-wal";
+            if (fs.existsSync(walPath)) {
+                fs.copyFileSync(walPath, walPath + ".bak" + version);
+            }
 
             // Try catch anything here, if gone wrong, restore the backup
             try {
@@ -83,9 +124,16 @@ class Database {
                 return statement !== "";
             })
 
+        // Use better-sqlite3 to run, prevent "This statement does not return data. Use run() instead"
+        const db = await this.getBetterSQLite3Database();
+
         for (let statement of statements) {
-            await R.exec(statement);
+            db.prepare(statement).run();
         }
+    }
+
+    static getBetterSQLite3Database() {
+        return R.knex.client.acquireConnection();
     }
 
     /**
@@ -93,27 +141,10 @@ class Database {
      * @returns {Promise<void>}
      */
     static async close() {
-        const listener = (reason, p) => {
-            Database.noReject = false;
-        };
-        process.addListener("unhandledRejection", listener);
-
-        console.log("Closing DB")
-
-        while (true) {
-            Database.noReject = true;
-            await R.close()
-            await sleep(2000)
-
-            if (Database.noReject) {
-                break;
-            } else {
-                console.log("Waiting to close the db")
-            }
+        if (this.sqliteInstance) {
+            this.sqliteInstance.close();
         }
-        console.log("SQLite closed")
-
-        process.removeListener("unhandledRejection", listener);
+        console.log("Stopped database");
     }
 }
 

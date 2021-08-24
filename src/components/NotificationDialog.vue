@@ -5,30 +5,32 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 id="exampleModalLabel" class="modal-title">
-                            Setup Notification
+                            {{ $t("Setup Notification") }}
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" />
                     </div>
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label for="type" class="form-label">Notification Type</label>
+                            <label for="type" class="form-label">{{ $t("Notification Type") }}</label>
                             <select id="type" v-model="notification.type" class="form-select">
                                 <option value="telegram">Telegram</option>
                                 <option value="webhook">Webhook</option>
-                                <option value="smtp">Email (SMTP)</option>
+                                <option value="smtp">{{ $t("Email") }} (SMTP)</option>
                                 <option value="discord">Discord</option>
                                 <option value="signal">Signal</option>
                                 <option value="gotify">Gotify</option>
                                 <option value="slack">Slack</option>
                                 <option value="pushover">Pushover</option>
                                 <option value="pushy">Pushy</option>
+                                <option value="octopush">Octopush</option>
                                 <option value="lunasea">LunaSea</option>
-                                <option value="apprise">Apprise (Support 50+ Notification services)</option>
+                                <option value="pushbullet">Pushbullet</option>
+                                <option value="line">Line Messenger</option>
                             </select>
                         </div>
 
                         <div class="mb-3">
-                            <label for="name" class="form-label">Friendly Name</label>
+                            <label for="name" class="form-label">{{ $t("Friendly Name") }}</label>
                             <input id="name" v-model="notification.name" type="text" class="form-control" required>
                         </div>
 
@@ -147,6 +149,11 @@
                                     You can get this by going to Server Settings -> Integrations -> Create Webhook
                                 </div>
                             </div>
+
+                            <div class="mb-3">
+                                <label for="discord-username" class="form-label">Bot Display Name</label>
+                                <input id="discord-username" v-model="notification.discordUsername" type="text" class="form-control" autocomplete="false" :placeholder="$root.appName">
+                            </div>
                         </template>
 
                         <template v-if="notification.type === 'signal'">
@@ -202,7 +209,7 @@
 
                         <template v-if="notification.type === 'slack'">
                             <div class="mb-3">
-                                <label for="slack-webhook-url" class="form-label">Webhook URL<span style="color:red;"><sup>*</sup></span></label>
+                                <label for="slack-webhook-url" class="form-label">Webhook URL<span style="color: red;"><sup>*</sup></span></label>
                                 <input id="slack-webhook-url" v-model="notification.slackwebhookURL" type="text" class="form-control" required>
                                 <label for="slack-username" class="form-label">Username</label>
                                 <input id="slack-username" v-model="notification.slackusername" type="text" class="form-control">
@@ -213,7 +220,7 @@
                                 <label for="slack-button-url" class="form-label">Uptime Kuma URL</label>
                                 <input id="slack-button" v-model="notification.slackbutton" type="text" class="form-control">
                                 <div class="form-text">
-                                    <span style="color:red;"><sup>*</sup></span>Required
+                                    <span style="color: red;"><sup>*</sup></span>Required
                                     <p style="margin-top: 8px;">
                                         More info about webhooks on: <a href="https://api.slack.com/messaging/webhooks" target="_blank">https://api.slack.com/messaging/webhooks</a>
                                     </p>
@@ -233,25 +240,56 @@
                         <template v-if="notification.type === 'pushy'">
                             <div class="mb-3">
                                 <label for="pushy-app-token" class="form-label">API_KEY</label>
-                                <input type="text" class="form-control" id="pushy-app-token" required v-model="notification.pushyAPIKey">
+                                <input id="pushy-app-token" v-model="notification.pushyAPIKey" type="text" class="form-control" required>
                             </div>
 
                             <div class="mb-3">
                                 <label for="pushy-user-key" class="form-label">USER_TOKEN</label>
                                 <div class="input-group mb-3">
-                                    <input type="text" class="form-control" id="pushy-user-key" required v-model="notification.pushyToken">
+                                    <input id="pushy-user-key" v-model="notification.pushyToken" type="text" class="form-control" required>
                                 </div>
                             </div>
                             <p style="margin-top: 8px;">
-                                    More info on: <a href="https://pushy.me/docs/api/send-notifications" target="_blank">https://pushy.me/docs/api/send-notifications</a>
+                                More info on: <a href="https://pushy.me/docs/api/send-notifications" target="_blank">https://pushy.me/docs/api/send-notifications</a>
+                            </p>
+                        </template>
+
+                        <template v-if="notification.type === 'octopush'">
+                            <div class="mb-3">
+                                <label for="octopush-key" class="form-label">API KEY</label>
+                                <input id="octopush-key" v-model="notification.octopushAPIKey" type="text" class="form-control" required>
+                                <label for="octopush-login" class="form-label">API LOGIN</label>
+                                <input id="octopush-login" v-model="notification.octopushLogin" type="text" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="octopush-type-sms" class="form-label">SMS Type</label>
+                                <select id="octopush-type-sms" v-model="notification.octopushSMSType" class="form-select">
+                                    <option value="sms_premium">Premium (Fast - recommended for alerting)</option>
+                                    <option value="sms_low_cost">Low Cost (Slow, sometimes blocked by operator)</option>
+                                </select>
+                                <div class="form-text">
+                                    Check octopush prices <a href="https://octopush.com/tarifs-sms-international/" target="_blank">https://octopush.com/tarifs-sms-international/</a>.
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="octopush-phone-number" class="form-label">Phone number (intl format, eg : +33612345678) </label>
+                                <input id="octopush-phone-number" v-model="notification.octopushPhoneNumber" type="text" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="octopush-sender-name" class="form-label">SMS Sender Name : 3-11 alphanumeric characters and space (a-zA-Z0-9)</label>
+                                <input id="octopush-sender-name" v-model="notification.octopushSenderName" type="text" minlength="3" maxlength="11" class="form-control">
+                            </div>
+
+                            <p style="margin-top: 8px;">
+                                More info on: <a href="https://octopush.com/api-sms-documentation/envoi-de-sms/" target="_blank">https://octopush.com/api-sms-documentation/envoi-de-sms/</a>
                             </p>
                         </template>
 
                         <template v-if="notification.type === 'pushover'">
                             <div class="mb-3">
-                                <label for="pushover-user" class="form-label">User Key<span style="color:red;"><sup>*</sup></span></label>
+                                <label for="pushover-user" class="form-label">User Key<span style="color: red;"><sup>*</sup></span></label>
                                 <input id="pushover-user" v-model="notification.pushoveruserkey" type="text" class="form-control" required>
-                                <label for="pushover-app-token" class="form-label">Application Token<span style="color:red;"><sup>*</sup></span></label>
+                                <label for="pushover-app-token" class="form-label">Application Token<span style="color: red;"><sup>*</sup></span></label>
                                 <input id="pushover-app-token" v-model="notification.pushoverapptoken" type="text" class="form-control" required>
                                 <label for="pushover-device" class="form-label">Device</label>
                                 <input id="pushover-device" v-model="notification.pushoverdevice" type="text" class="form-control">
@@ -291,7 +329,7 @@
                                     <option>none</option>
                                 </select>
                                 <div class="form-text">
-                                    <span style="color:red;"><sup>*</sup></span>Required
+                                    <span style="color: red;"><sup>*</sup></span>Required
                                     <p style="margin-top: 8px;">
                                         More info on: <a href="https://pushover.net/api" target="_blank">https://pushover.net/api</a>
                                     </p>
@@ -305,46 +343,56 @@
                             </div>
                         </template>
 
-                        <template v-if="notification.type === 'apprise'">
-                            <div class="mb-3">
-                                <label for="apprise-url" class="form-label">Apprise URL</label>
-                                <input id="apprise-url" v-model="notification.appriseURL" type="text" class="form-control" required>
-                                <div class="form-text">
-                                    <p>Example: twilio://AccountSid:AuthToken@FromPhoneNo</p>
-                                    <p>
-                                        Read more: <a href="https://github.com/caronc/apprise/wiki#notification-services" target="_blank">https://github.com/caronc/apprise/wiki#notification-services</a>
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <p>
-                                    Status:
-                                    <span v-if="appriseInstalled" class="text-primary">Apprise is installed</span>
-                                    <span v-else class="text-danger">Apprise is not installed. <a href="https://github.com/caronc/apprise">Read more</a></span>
-                                </p>
-                            </div>
-                        </template>
-
                         <template v-if="notification.type === 'lunasea'">
                             <div class="mb-3">
-                                <label for="lunasea-device" class="form-label">LunaSea Device ID<span style="color:red;"><sup>*</sup></span></label>
+                                <label for="lunasea-device" class="form-label">LunaSea Device ID<span style="color: red;"><sup>*</sup></span></label>
                                 <input id="lunasea-device" v-model="notification.lunaseaDevice" type="text" class="form-control" required>
                                 <div class="form-text">
-                                    <p><span style="color:red;"><sup>*</sup></span>Required</p>
+                                    <p><span style="color: red;"><sup>*</sup></span>Required</p>
                                 </div>
                             </div>
                         </template>
 
+                        <template v-if="notification.type === 'pushbullet'">
+                            <div class="mb-3">
+                                <label for="pushbullet-access-token" class="form-label">Access Token</label>
+                                <input id="pushbullet-access-token" v-model="notification.pushbulletAccessToken" type="text" class="form-control" required>
+                            </div>
+
+                            <p style="margin-top: 8px;">
+                                More info on: <a href="https://docs.pushbullet.com" target="_blank">https://docs.pushbullet.com</a>
+                            </p>
+                        </template>
+
+                        <template v-if="notification.type === 'line'">
+                            <div class="mb-3">
+                                <label for="line-channel-access-token" class="form-label">Channel access token</label>
+                                <input id="line-channel-access-token" v-model="notification.lineChannelAccessToken" type="text" class="form-control" required>
+                            </div>
+                            <div class="form-text">
+                                Line Developers Console - <b>Basic Settings</b>
+                            </div>
+                            <div class="mb-3" style="margin-top: 12px;">
+                                <label for="line-user-id" class="form-label">User ID</label>
+                                <input id="line-user-id" v-model="notification.lineUserID" type="text" class="form-control" required>
+                            </div>
+                            <div class="form-text">
+                                Line Developers Console - <b>Messaging API</b>
+                            </div>
+                            <div class="form-text" style="margin-top: 8px;">
+                                First access the <a href="https://developers.line.biz/console/" target="_blank">Line Developers Console</a>, create a provider and channel (Messaging API), then you can get the channel access token and user id from the above mentioned menu items.
+                            </div>
+                        </template>
                     </div>
                     <div class="modal-footer">
                         <button v-if="id" type="button" class="btn btn-danger" :disabled="processing" @click="deleteConfirm">
-                            Delete
+                            {{ $t("Delete") }}
                         </button>
                         <button type="button" class="btn btn-warning" :disabled="processing" @click="test">
-                            Test
+                            {{ $t("Test") }}
                         </button>
                         <button type="submit" class="btn btn-primary" :disabled="processing">
-                            Save
+                            {{ $t("Save") }}
                         </button>
                     </div>
                 </div>
@@ -380,7 +428,6 @@ export default {
                 type: null,
                 gotifyPriority: 8,
             },
-            appriseInstalled: false,
         }
     },
     computed: {
@@ -411,10 +458,6 @@ export default {
     },
     mounted() {
         this.modal = new Modal(this.$refs.modal)
-
-        this.$root.getSocket().emit("checkApprise", (installed) => {
-            this.appriseInstalled = installed;
-        })
     },
     methods: {
 
@@ -509,17 +552,12 @@ export default {
 }
 </script>
 
-<style>
-.modal-dialog .form-text, .modal-dialog p{
-    color: var(--main-font-color);
-}
-.modal-content{
-    border: 1px solid var(--main-font-color);
-}
-@media (prefers-color-scheme: dark) {
-    .btn-close{
-        background: transparent url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23FFF'%3e%3cpath d='M.293.293a1 1 0 011.414 0L8 6.586 14.293.293a1 1 0 111.414 1.414L9.414 8l6.293 6.293a1 1 0 01-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 01-1.414-1.414L6.586 8 .293 1.707a1 1 0 010-1.414z'/%3e%3c/svg%3e") center/1em auto no-repeat;
-        opacity: 1;
+<style lang="scss" scoped>
+@import "../assets/vars.scss";
+
+.dark {
+    .modal-dialog .form-text, .modal-dialog p {
+        color: $dark-font-color;
     }
 }
 </style>

@@ -6,11 +6,12 @@ dayjs.extend(utc)
 dayjs.extend(timezone)
 const axios = require("axios");
 const { Prometheus } = require("../prometheus");
-const { debug, UP, DOWN, PENDING, flipStatus } = require("../../src/util");
-const { tcping, ping, checkCertificate } = require("../util-server");
+const { debug, UP, DOWN, PENDING, flipStatus, TimeLogger } = require("../../src/util");
+const { tcping, ping, checkCertificate, checkStatusCode } = require("../util-server");
 const { R } = require("redbean-node");
 const { BeanModel } = require("redbean-node/dist/bean-model");
 const { Notification } = require("../notification")
+const version = require("../../package.json").version;
 
 /**
  * status:
@@ -45,6 +46,8 @@ class Monitor extends BeanModel {
             keyword: this.keyword,
             ignoreTls: this.getIgnoreTls(),
             upsideDown: this.isUpsideDown(),
+            maxredirects: this.maxredirects,
+            accepted_statuscodes: this.getAcceptedStatuscodes(),
             notificationIDList,
         };
     }
@@ -65,6 +68,10 @@ class Monitor extends BeanModel {
         return Boolean(this.upsideDown);
     }
 
+    getAcceptedStatuscodes() {
+        return JSON.parse(this.accepted_statuscodes_json);
+    }
+
     start(io) {
         let previousBeat = null;
         let retries = 0;
@@ -72,6 +79,10 @@ class Monitor extends BeanModel {
         let prometheus = new Prometheus(this);
 
         const beat = async () => {
+
+            // Expose here for prometheus update
+            // undefined if not https
+            let tlsInfo = undefined;
 
             if (! previousBeat) {
                 previousBeat = await R.findOne("heartbeat", " monitor_id = ? ORDER BY time DESC", [
@@ -99,30 +110,36 @@ class Monitor extends BeanModel {
 
             try {
                 if (this.type === "http" || this.type === "keyword") {
+                    // Do not do any queries/high loading things before the "bean.ping"
                     let startTime = dayjs().valueOf();
 
-                    // Use Custom agent to disable session reuse
-                    // https://github.com/nodejs/node/issues/3940
                     let res = await axios.get(this.url, {
+                        timeout: this.interval * 1000 * 0.8,
                         headers: {
-                            "User-Agent": "Uptime-Kuma",
+                            "Accept": "*/*",
+                            "User-Agent": "Uptime-Kuma/" + version,
                         },
                         httpsAgent: new https.Agent({
-                            maxCachedSessions: 0,
+                            maxCachedSessions: 0,      // Use Custom agent to disable session reuse (https://github.com/nodejs/node/issues/3940)
                             rejectUnauthorized: ! this.getIgnoreTls(),
                         }),
+                        maxRedirects: this.maxredirects,
+                        validateStatus: (status) => {
+                            return checkStatusCode(status, this.getAcceptedStatuscodes());
+                        },
                     });
                     bean.msg = `${res.status} - ${res.statusText}`
                     bean.ping = dayjs().valueOf() - startTime;
 
                     // Check certificate if https is used
-
                     let certInfoStartTime = dayjs().valueOf();
                     if (this.getUrl()?.protocol === "https:") {
                         try {
-                            await this.updateTlsInfo(checkCertificate(res));
+                            tlsInfo = await this.updateTlsInfo(checkCertificate(res));
                         } catch (e) {
-                            console.error(e.message)
+                            if (e.message !== "No TLS certificate in response") {
+                                console.error(e.message)
+                            }
                         }
                     }
 
@@ -223,7 +240,8 @@ class Monitor extends BeanModel {
                         try {
                             await Notification.send(JSON.parse(notification.config), msg, await this.toJSON(), bean.toJSON())
                         } catch (e) {
-                            console.error("Cannot send notification to " + notification.name)
+                            console.error("Cannot send notification to " + notification.name);
+                            console.log(e);
                         }
                     }
                 }
@@ -240,22 +258,22 @@ class Monitor extends BeanModel {
                 console.warn(`Monitor #${this.id} '${this.name}': Failing: ${bean.msg} | Type: ${this.type}`)
             }
 
-            prometheus.update(bean)
-
             io.to(this.user_id).emit("heartbeat", bean.toJSON());
-
-            await R.store(bean)
             Monitor.sendStats(io, this.id, this.user_id)
 
+            await R.store(bean);
+            prometheus.update(bean, tlsInfo);
+
             previousBeat = bean;
+
+            this.heartbeatInterval = setTimeout(beat, this.interval * 1000);
         }
 
         beat();
-        this.heartbeatInterval = setInterval(beat, this.interval * 1000);
     }
 
     stop() {
-        clearInterval(this.heartbeatInterval)
+        clearTimeout(this.heartbeatInterval);
     }
 
     /**
@@ -275,7 +293,7 @@ class Monitor extends BeanModel {
     /**
      * Store TLS info to database
      * @param checkCertificateResult
-     * @returns {Promise<void>}
+     * @returns {Promise<object>}
      */
     async updateTlsInfo(checkCertificateResult) {
         let tls_info_bean = await R.findOne("monitor_tls_info", "monitor_id = ?", [
@@ -287,13 +305,15 @@ class Monitor extends BeanModel {
         }
         tls_info_bean.info_json = JSON.stringify(checkCertificateResult);
         await R.store(tls_info_bean);
+
+        return checkCertificateResult;
     }
 
     static async sendStats(io, monitorID, userID) {
-        Monitor.sendAvgPing(24, io, monitorID, userID);
-        Monitor.sendUptime(24, io, monitorID, userID);
-        Monitor.sendUptime(24 * 30, io, monitorID, userID);
-        Monitor.sendCertInfo(io, monitorID, userID);
+        await Monitor.sendAvgPing(24, io, monitorID, userID);
+        await Monitor.sendUptime(24, io, monitorID, userID);
+        await Monitor.sendUptime(24 * 30, io, monitorID, userID);
+        await Monitor.sendCertInfo(io, monitorID, userID);
     }
 
     /**
@@ -301,6 +321,8 @@ class Monitor extends BeanModel {
      * @param duration : int Hours
      */
     static async sendAvgPing(duration, io, monitorID, userID) {
+        const timeLogger = new TimeLogger();
+
         let avgPing = parseInt(await R.getCell(`
             SELECT AVG(ping)
             FROM heartbeat
@@ -310,6 +332,8 @@ class Monitor extends BeanModel {
             -duration,
             monitorID,
         ]));
+
+        timeLogger.print(`[Monitor: ${monitorID}] avgPing`);
 
         io.to(userID).emit("avgPing", monitorID, avgPing);
     }
@@ -330,6 +354,8 @@ class Monitor extends BeanModel {
      * @param duration : int Hours
      */
     static async sendUptime(duration, io, monitorID, userID) {
+        const timeLogger = new TimeLogger();
+
         let sec = duration * 3600;
 
         let heartbeatList = await R.getAll(`
@@ -340,6 +366,8 @@ class Monitor extends BeanModel {
             -duration,
             monitorID,
         ]);
+
+        timeLogger.print(`[Monitor: ${monitorID}][${duration}] sendUptime`);
 
         let downtime = 0;
         let total = 0;
