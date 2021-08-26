@@ -446,6 +446,154 @@ let indexHTML = fs.readFileSync("./dist/index.html").toString();
             }
         });
 
+        socket.on("getTags", async (callback) => {
+            try {
+                checkLogin(socket)
+
+                const list = await R.findAll("tag")
+
+                callback({
+                    ok: true,
+                    tags: list.map(bean => bean.toJSON()),
+                });
+
+            } catch (e) {
+                callback({
+                    ok: false,
+                    msg: e.message,
+                });
+            }
+        });
+
+        socket.on("addTag", async (tag, callback) => {
+            try {
+                checkLogin(socket)
+
+                let bean = R.dispense("tag")
+                bean.name = tag.name
+                await R.store(bean)
+
+                callback({
+                    ok: true,
+                    tag: await bean.toJSON(),
+                });
+
+            } catch (e) {
+                callback({
+                    ok: false,
+                    msg: e.message,
+                });
+            }
+        });
+
+        socket.on("editTag", async (tag, callback) => {
+            try {
+                checkLogin(socket)
+
+                let bean = await R.findOne("monitor", " id = ? ", [ tag.id ])
+                bean.name = tag.name
+                await R.store(bean)
+
+                callback({
+                    ok: true,
+                    tag: await bean.toJSON(),
+                });
+
+            } catch (e) {
+                callback({
+                    ok: false,
+                    msg: e.message,
+                });
+            }
+        });
+
+        socket.on("deleteTag", async (tagID, callback) => {
+            try {
+                checkLogin(socket)
+
+                await R.exec("DELETE FROM tag WHERE id = ? ", [ tagID ])
+
+                callback({
+                    ok: true,
+                    msg: "Deleted Successfully.",
+                });
+
+            } catch (e) {
+                callback({
+                    ok: false,
+                    msg: e.message,
+                });
+            }
+        });
+
+        socket.on("addMonitorTag", async (tagID, monitorID, value, callback) => {
+            try {
+                checkLogin(socket)
+
+                await R.exec("INSERT INTO monitor_tag (tag_id, monitor_id, value) VALUES (?, ?, ?)", [
+                    tagID,
+                    monitorID,
+                    value,
+                ])
+
+                callback({
+                    ok: true,
+                    msg: "Added Successfully.",
+                });
+
+            } catch (e) {
+                callback({
+                    ok: false,
+                    msg: e.message,
+                });
+            }
+        });
+
+        socket.on("editMonitorTag", async (tagID, monitorID, value, callback) => {
+            try {
+                checkLogin(socket)
+
+                await R.exec("UPDATE monitor_tag SET value = ? WHERE tag_id = ? AND monitor_id = ?", [
+                    value,
+                    tagID,
+                    monitorID,
+                ])
+
+                callback({
+                    ok: true,
+                    msg: "Edited Successfully.",
+                });
+
+            } catch (e) {
+                callback({
+                    ok: false,
+                    msg: e.message,
+                });
+            }
+        });
+
+        socket.on("deleteMonitorTag", async (tagID, monitorID, callback) => {
+            try {
+                checkLogin(socket)
+
+                await R.exec("DELETE FROM monitor_tag WHERE tag_id = ? AND monitor_id = ?", [
+                    tagID,
+                    monitorID,
+                ])
+
+                callback({
+                    ok: true,
+                    msg: "Deleted Successfully.",
+                });
+
+            } catch (e) {
+                callback({
+                    ok: false,
+                    msg: e.message,
+                });
+            }
+        });
+
         socket.on("changePassword", async (password, callback) => {
             try {
                 checkLogin(socket)

@@ -158,6 +158,10 @@
                                 </div>
                             </template>
 
+                            <div class="my-3">
+                                <tags-manager :pre-selected-tags="monitor.tags" :tags="tags"></tags-manager>
+                            </div>
+
                             <div class="mt-5 mb-1">
                                 <button class="btn btn-primary" type="submit" :disabled="processing">{{ $t("Save") }}</button>
                             </div>
@@ -195,6 +199,7 @@
 
 <script>
 import NotificationDialog from "../components/NotificationDialog.vue";
+import TagsManager from "../components/TagsManager.vue";
 import { useToast } from "vue-toastification"
 import VueMultiselect from "vue-multiselect"
 import { isDev } from "../util.ts";
@@ -203,6 +208,7 @@ const toast = useToast()
 export default {
     components: {
         NotificationDialog,
+        TagsManager,
         VueMultiselect,
     },
 
@@ -218,6 +224,8 @@ export default {
 
             // Source: https://digitalfortress.tech/tips/top-15-commonly-used-regex/
             ipRegexPattern: "((^\s*((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))\s*$)|(^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*$))",
+
+            tags: [],
         }
     },
 
@@ -280,6 +288,14 @@ export default {
     },
     methods: {
         init() {
+            this.$root.getSocket().emit("getTags", (res) => {
+                if (res.ok) {
+                    this.tags = res.tags;
+                } else {
+                    toast.error(res.msg)
+                }
+            });
+
             if (this.isAdd) {
                 console.log("??????")
                 this.monitor = {
