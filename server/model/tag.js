@@ -5,6 +5,7 @@ class Tag extends BeanModel {
         return {
             id: this._id,
             name: this._name,
+            color: this._color,
         };
     }
 }
