@@ -387,6 +387,7 @@ export default {
         padding-top: 0;
         padding-bottom: 0;
         margin-bottom: 0;
+        opacity: 0.67;
     }
 
     .multiselect__input, .multiselect__single {

@@ -1,7 +1,7 @@
 <template>
     <div class="tag-wrapper m-2 py-1 px-3 rounded d-inline-flex" :style="{ backgroundColor: item.color }">
         {{ displayText }}
-        <span class="ps-1 btn-remove" @click="remove(item.id)">
+        <span class="ps-1 btn-remove" @click="remove(item)">
             <font-awesome-icon icon="times" />
         </span>
     </div>
@@ -21,8 +21,8 @@ export default {
     },
     computed: {
         displayText() {
-            if (this.value == "") {
-                return this.name;
+            if (this.item.value == "") {
+                return this.item.name;
             } else {
                 return `${this.item.name}: ${this.item.value}`;
             }
