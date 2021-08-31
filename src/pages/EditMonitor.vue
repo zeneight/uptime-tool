@@ -358,6 +358,8 @@ export default {
     .multiselect__tags {
         border-radius: 1.5rem;
         border: 1px solid #ced4da;
+        min-height: 38px;
+        padding: 6px 40px 0 8px;
     }
 
     .multiselect--active .multiselect__tags {
@@ -374,7 +376,22 @@ export default {
 
     .multiselect__tag {
         border-radius: 50rem;
+        margin-bottom: 0;
+        padding: 6px 26px 6px 10px;
         background: $primary !important;
+    }
+
+    .multiselect__placeholder {
+        font-size: 1rem;
+        padding-left: 6px;
+        padding-top: 0;
+        padding-bottom: 0;
+        margin-bottom: 0;
+    }
+
+    .multiselect__input, .multiselect__single {
+        line-height: 14px;
+        margin-bottom: 0;
     }
 
     .dark {

@@ -1,7 +1,7 @@
 <template>
     <div>
         <h4 class="mb-3">{{ $t("Tags") }}</h4>
-        <div class="mb-3 form-control disabled p-1 rounded-1">
+        <div class="mb-3 p-1">
             <tag
                 v-for="item in selectedTags"
                 :key="item.id"
@@ -10,31 +10,77 @@
             />
         </div>
         <div>
-            <select
-                id="snewDraftTagName"
+            <vue-multiselect
                 v-model="newDraftTag.select"
-                class="form-select mb-2"
-                required
+                class="mb-2"
+                :options="tagOptions"
+                :multiple="false"
+                :searchable="true"
+                placeholder="Add..."
+                track-by="id"
+                label="name"
             >
-                <option value="0" disabled selected>{{ $t("Add...") }}</option>
-                <option v-for="tag in tags" :key="tag.id" :value="tag.id">
-                    {{ tag.name }}
-                </option>
-                <option value="-1">{{ $t("New...") }}</option>
-            </select>
-            <div v-show="newDraftTag.select == -1" class="d-flex mb-2">
+                <template #option="{ option }">
+                    <div class="mx-2 py-1 px-3 rounded d-inline-flex"
+                         style="margin-top: -5px; margin-bottom: -5px; height: 24px;"
+                         :style="{ color: option.color ? 'white' : 'var(--bs-body-color)', backgroundColor: option.color + ' !important' }"
+                    >
+                        <span>
+                            {{ option.name }}</span>
+                    </div>
+                </template>
+                <template #singleLabel="{ option }">
+                    <div class="py-1 px-3 rounded d-inline-flex"
+                         style="height: 24px;"
+                         :style="{ color: option.color ? 'white' : 'var(--bs-body-color)', backgroundColor: option.color + ' !important' }"
+                    >
+                        <span>{{ option.name }}</span>
+                    </div>
+                </template>
+            </vue-multiselect>
+            <div v-if="newDraftTag.select?.id == -1" class="d-flex mb-2">
                 <div class="w-50 pe-2">
-                    <input class="form-control" placeholder="name" />
+                    <input v-model="newDraftTag.name" class="form-control" :class="{'is-invalid': newDraftTag.nameInvalid}" placeholder="name" />
+                    <div class="invalid-feedback">
+                        Tag with this name already exist.
+                    </div>
                 </div>
                 <div class="w-50 ps-2">
-                    <input class="form-control" placeholder="color" />
+                    <vue-multiselect
+                        v-model="newDraftTag.color"
+                        :options="colorOptions"
+                        :multiple="false"
+                        :searchable="true"
+                        placeholder="color"
+                        track-by="color"
+                        label="name"
+                        select-label=""
+                        deselect-label=""
+                    >
+                        <template #option="{ option }">
+                            <div class="mx-2 py-1 px-3 rounded d-inline-flex"
+                                 style="height: 24px; color: white;"
+                                 :style="{ backgroundColor: option.color + ' !important' }"
+                            >
+                                <span>{{ option.name }}</span>
+                            </div>
+                        </template>
+                        <template #singleLabel="{ option }">
+                            <div class="py-1 px-3 rounded d-inline-flex"
+                                 style="height: 24px; color: white;"
+                                 :style="{ backgroundColor: option.color + ' !important' }"
+                            >
+                                <span>{{ option.name }}</span>
+                            </div>
+                        </template>
+                    </vue-multiselect>
                 </div>
             </div>
-            <input class="form-control mb-2" placeholder="value (optional)" />
+            <input v-model="newDraftTag.value" class="form-control mb-2" placeholder="value (optional)" />
             <div class="mb-2">
                 <button
                     class="btn btn-secondary float-end"
-                    :disabled="processing"
+                    :class="{ disabled: processing || newDraftTag.invalid }"
                 >
                     {{ $t("Add") }}
                 </button>
@@ -66,20 +112,70 @@ export default {
         return {
             processing: false,
             newTags: [],
-            newDraftTag: { select: 0 },
-            selectedTags: this.preSelectedTags,
+            removeTags: [],
+            newDraftTag: {
+                name: null,
+                select: null,
+                color: null,
+                value: "",
+                invalid: false,
+                nameInvalid: false,
+            },
         };
     },
+    computed: {
+        tagOptions() {
+            return [
+                ...this.tags,
+                { name: this.$t("New..."),
+                    id: -1 },
+            ]
+        },
+        selectedTags() {
+            return this.preSelectedTags.concat(this.newTags).filter(tag => !this.removeTags.includes(tag.id));
+        },
+        colorOptions() {
+            return [
+                { name: this.$t("Gray"),
+                    color: "#4B5563" },
+                { name: this.$t("Red"),
+                    color: "#DC2626" },
+                { name: this.$t("Orange"),
+                    color: "#D97706" },
+                { name: this.$t("Green"),
+                    color: "#059669" },
+                { name: this.$t("Blue"),
+                    color: "#2563EB" },
+                { name: this.$t("Indigo"),
+                    color: "#4F46E5" },
+                { name: this.$t("Purple"),
+                    color: "#7C3AED" },
+                { name: this.$t("Pink"),
+                    color: "#DB2777" },
+            ]
+        }
+    },
     watch: {
-        preSelectedTags(gotTags) {
-            if (gotTags.length > 0 && this.selectedTags.length === 0) {
-                this.selectedTags = gotTags;
-            }
+        "newDraftTag.name": function (newName) {
+            this.newDraftTag.name = newName.trim();
+            this.validateDraftTag();
         },
     },
     methods: {
         removeTag(id) {
             console.log(id + " not implemented yet");
+        },
+        validateDraftTag() {
+            if (this.tags.filter(tag => tag.name === this.newDraftTag.name).length > 0) {
+                this.newDraftTag.nameInvalid = true;
+                this.newDraftTag.invalid = true;
+            } else if (this.newDraftTag.color == null) {
+                this.newDraftTag.nameInvalid = false;
+                this.newDraftTag.invalid = true;
+            } else {
+                this.newDraftTag.invalid = false;
+                this.newDraftTag.nameInvalid = false;
+            }
         },
     },
 };

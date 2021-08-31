@@ -1,5 +1,10 @@
 <template>
-    <div class="m-2 py-1 px-3 rounded d-inline-flex" :style="{ backgroundColor: item.color }">{{ displayText }}<span class="ps-1 btn-remove" @click="remove(item.id)"><font-awesome-icon icon="times" /></span></div>
+    <div class="tag-wrapper m-2 py-1 px-3 rounded d-inline-flex" :style="{ backgroundColor: item.color }">
+        {{ displayText }}
+        <span class="ps-1 btn-remove" @click="remove(item.id)">
+            <font-awesome-icon icon="times" />
+        </span>
+    </div>
 </template>
 
 <script>
@@ -27,8 +32,13 @@ export default {
 </script>
 
 <style scoped>
+.tag-wrapper {
+    color: white;
+}
+
 .btn-remove {
     font-size: 0.9em;
+    line-height: 24px;
     opacity: 0.3;
 }
 
