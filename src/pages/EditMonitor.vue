@@ -159,7 +159,7 @@
                             </template>
 
                             <div class="my-3">
-                                <tags-manager :pre-selected-tags="monitor.tags" :tags="tags"></tags-manager>
+                                <tags-manager ref="tagsManager" :pre-selected-tags="monitor.tags" :tags="tags"></tags-manager>
                             </div>
 
                             <div class="mt-5 mb-1">
@@ -332,6 +332,8 @@ export default {
                     this.processing = false;
 
                     if (res.ok) {
+                        this.$refs.tagsManager.submit(res.monitorID);
+
                         toast.success(res.msg);
                         this.$router.push("/dashboard/" + res.monitorID)
                     } else {
@@ -340,6 +342,8 @@ export default {
 
                 })
             } else {
+                this.$refs.tagsManager.submit(this.monitor.id);
+
                 this.$root.getSocket().emit("editMonitor", this.monitor, (res) => {
                     this.processing = false;
                     this.$root.toastRes(res)

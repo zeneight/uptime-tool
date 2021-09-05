@@ -6,7 +6,7 @@
                 v-for="item in selectedTags"
                 :key="item.id"
                 :item="item"
-                :remove="removeTag"
+                :remove="deleteTag"
             />
         </div>
         <div>
@@ -79,9 +79,10 @@
             <input v-model="newDraftTag.value" class="form-control mb-2" :placeholder="$t('value (optional)')" />
             <div class="mb-2">
                 <button
+                    type="button"
                     class="btn btn-secondary float-end"
                     :disabled="processing || newDraftTag.invalid"
-                    @click="addDraftTag"
+                    @click.stop="addDraftTag"
                 >
                     {{ $t("Add") }}
                 </button>
@@ -93,6 +94,8 @@
 <script>
 import VueMultiselect from "vue-multiselect";
 import Tag from "../components/Tag.vue";
+import { useToast } from "vue-toastification"
+const toast = useToast()
 
 export default {
     components: {
@@ -113,7 +116,7 @@ export default {
         return {
             processing: false,
             newTags: [],
-            removeTags: [],
+            deleteTags: [],
             newDraftTag: {
                 name: null,
                 select: null,
@@ -129,7 +132,7 @@ export default {
             return this.tags;
         },
         selectedTags() {
-            return this.preSelectedTags.concat(this.newTags).filter(tag => !this.removeTags.includes(tag.id));
+            return this.preSelectedTags.concat(this.newTags).filter(tag => !this.deleteTags.find(monitorTag => monitorTag.id == tag.id));
         },
         colorOptions() {
             return [
@@ -167,13 +170,13 @@ export default {
         },
     },
     methods: {
-        removeTag(item) {
+        deleteTag(item) {
             if (item.new) {
                 // Undo Adding a new Tag
                 this.newTags = this.newTags.filter(tag => tag.name != item.name && tag.value != item.value);
             } else {
                 // Remove an Existing Tag
-                this.removeTags.push(item);
+                this.deleteTags.push(item);
             }
         },
         validateDraftTag() {
@@ -221,6 +224,79 @@ export default {
                     new: true,
                 })
             }
+        },
+        addTagAsync(newTag) {
+            return new Promise((resolve) => {
+                this.$root.getSocket().emit("addTag", newTag, resolve);
+            });
+        },
+        addMonitorTagAsync(tagId, monitorId, value) {
+            return new Promise((resolve) => {
+                this.$root.getSocket().emit("addMonitorTag", tagId, monitorId, value, resolve);
+            });
+        },
+        deleteMonitorTagAsync(tagId, monitorId) {
+            return new Promise((resolve) => {
+                this.$root.getSocket().emit("deleteMonitorTag", tagId, monitorId, resolve);
+            });
+        },
+        async submit(monitorId) {
+            console.log(`Submitting tag changes for monitor ${monitorId}...`);
+            this.processing = true;
+
+            for (const newTag of this.newTags) {
+                let tagId;
+                if (newTag.id == null) {
+                    let newTagResult;
+                    await this.addTagAsync(newTag).then((res) => {
+                        if (!res.ok) {
+                            toast.error(res.msg);
+                            newTagResult = false;
+                        }
+                        newTagResult = res.tag;
+                    });
+                    if (!newTagResult) {
+                        // abort
+                        this.processing = false;
+                        return;
+                    }
+                    tagId = newTagResult.id;
+                } else {
+                    tagId = newTag.id;
+                }
+
+                let newMonitorTagResult;
+                await this.addMonitorTagAsync(tagId, monitorId, newTag.value).then((res) => {
+                    if (!res.ok) {
+                        toast.error(res.msg);
+                        newMonitorTagResult = false;
+                    }
+                    newMonitorTagResult = true;
+                });
+                if (!newMonitorTagResult) {
+                    // abort
+                    this.processing = false;
+                    return;
+                }
+            }
+
+            for (const deleteTag of this.deleteTags) {
+                let deleteMonitorTagResult;
+                await this.deleteMonitorTagAsync(deleteTag.tag_id, deleteTag.monitor_id).then((res) => {
+                    if (!res.ok) {
+                        toast.error(res.msg);
+                        deleteMonitorTagResult = false;
+                    }
+                    deleteMonitorTagResult = true;
+                });
+                if (!deleteMonitorTagResult) {
+                    // abort
+                    this.processing = false;
+                    return;
+                }
+            }
+
+            this.processing = false;
         }
     },
 };

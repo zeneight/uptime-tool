@@ -471,6 +471,7 @@ let indexHTML = fs.readFileSync("./dist/index.html").toString();
 
                 let bean = R.dispense("tag")
                 bean.name = tag.name
+                bean.color = tag.color
                 await R.store(bean)
 
                 callback({
@@ -492,6 +493,7 @@ let indexHTML = fs.readFileSync("./dist/index.html").toString();
 
                 let bean = await R.findOne("monitor", " id = ? ", [ tag.id ])
                 bean.name = tag.name
+                bean.color = tag.color
                 await R.store(bean)
 
                 callback({
@@ -580,6 +582,9 @@ let indexHTML = fs.readFileSync("./dist/index.html").toString();
                     tagID,
                     monitorID,
                 ])
+
+                // Cleanup unused Tags
+                await R.exec("delete from tag where ( select count(*) from monitor_tag mt where tag.id = mt.tag_id ) = 0");
 
                 callback({
                     ok: true,
