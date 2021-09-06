@@ -2,6 +2,9 @@
     <transition name="slide-fade" appear>
         <div v-if="monitor">
             <h1> {{ monitor.name }}</h1>
+            <div class="tags">
+                <Tag v-for="tag in monitor.tags" :key="tag.id" :item="tag" :size="'sm'" />
+            </div>
             <p class="url">
                 <a v-if="monitor.type === 'http' || monitor.type === 'keyword' " :href="monitor.url" target="_blank">{{ monitor.url }}</a>
                 <span v-if="monitor.type === 'port'">TCP Ping {{ monitor.hostname }}:{{ monitor.port }}</span>
@@ -188,6 +191,7 @@ import CountUp from "../components/CountUp.vue";
 import Uptime from "../components/Uptime.vue";
 import Pagination from "v-pagination-3";
 const PingChart = defineAsyncComponent(() => import("../components/PingChart.vue"));
+import Tag from "../components/Tag.vue";
 
 export default {
     components: {
@@ -199,6 +203,7 @@ export default {
         Status,
         Pagination,
         PingChart,
+        Tag,
     },
     data() {
         return {
@@ -421,6 +426,14 @@ table {
     .keyword {
         color: $dark-font-color;
     }
+}
+
+.tags {
+    margin-bottom: 0.5rem;
+}
+
+.tags > div:first-child {
+    margin-left: 0 !important;
 }
 
 </style>

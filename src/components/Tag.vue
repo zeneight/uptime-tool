@@ -1,7 +1,16 @@
 <template>
-    <div class="tag-wrapper m-2 py-1 px-3 rounded d-inline-flex" :style="{ backgroundColor: item.color }">
+    <div class="tag-wrapper rounded d-inline-flex"
+         :class="{ 'px-3': size == 'normal',
+                   'py-1': size == 'normal',
+                   'm-2': size == 'normal',
+                   'px-2': size == 'sm',
+                   'py-0': size == 'sm',
+                   'm-1': size == 'sm',
+         }"
+         :style="{ backgroundColor: item.color, fontSize: size == 'sm' ? '0.7em' : '1em' }"
+    >
         {{ displayText }}
-        <span class="ps-1 btn-remove" @click="remove(item)">
+        <span v-if="remove != null" class="ps-1 btn-remove" @click="remove(item)">
             <font-awesome-icon icon="times" />
         </span>
     </div>
@@ -16,7 +25,11 @@ export default {
         },
         remove: {
             type: Function,
-            required: true,
+            default: null,
+        },
+        size: {
+            type: String,
+            default: "normal",
         }
     },
     computed: {
