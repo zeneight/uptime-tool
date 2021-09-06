@@ -9,7 +9,7 @@
          }"
          :style="{ backgroundColor: item.color, fontSize: size == 'sm' ? '0.7em' : '1em' }"
     >
-        {{ displayText }}
+        <span class="tag-text">{{ displayText }}</span>
         <span v-if="remove != null" class="ps-1 btn-remove" @click="remove(item)">
             <font-awesome-icon icon="times" />
         </span>
@@ -47,6 +47,10 @@ export default {
 <style scoped>
 .tag-wrapper {
     color: white;
+}
+
+.tag-text {
+    padding-bottom: 1px !important;
 }
 
 .btn-remove {

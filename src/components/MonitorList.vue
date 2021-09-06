@@ -150,7 +150,7 @@ export default {
 .tags {
     padding-left: 62px;
     display: flex;
-    flex-direction: row;
     flex-wrap: wrap;
+    gap: 0;
 }
 </style>
