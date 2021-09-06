@@ -287,7 +287,7 @@ export default {
         this.dnsresolvetypeOptions = dnsresolvetypeOptions;
     },
     methods: {
-        init() {
+        fetchTags() {
             this.$root.getSocket().emit("getTags", (res) => {
                 if (res.ok) {
                     this.tags = res.tags;
@@ -295,6 +295,9 @@ export default {
                     toast.error(res.msg)
                 }
             });
+        },
+        init() {
+            this.fetchTags();
 
             if (this.isAdd) {
                 console.log("??????")
@@ -345,6 +348,7 @@ export default {
                 this.$refs.tagsManager.submit(this.monitor.id);
 
                 this.$root.getSocket().emit("editMonitor", this.monitor, (res) => {
+                    this.fetchTags();
                     this.processing = false;
                     this.$root.toastRes(res)
                 })
