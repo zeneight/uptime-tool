@@ -2,9 +2,16 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v1.6.2](https://github.com/philippdormann/uptime-kuma/compare/v1.6.1...v1.6.2)
+
+- fix: drop frozen-lockfile from dockerfile for fixing builds without my local registry [`0939477`](https://github.com/philippdormann/uptime-kuma/commit/09394777a674c751f1f175e7a4fcf6c7eac668e8)
+
 #### [v1.6.1](https://github.com/philippdormann/uptime-kuma/compare/v1.6.0...v1.6.1)
 
+> 7 September 2021
+
 - the usual post-merge layout cleanups [`6e02beb`](https://github.com/philippdormann/uptime-kuma/commit/6e02beb3505efe951a44be31d76636da27a3afc7)
+- 🚀RELEASE v1.6.1 [`ba55dfa`](https://github.com/philippdormann/uptime-kuma/commit/ba55dfa587f0c1a87ff16cc353a4c807bbb8fbea)
 
 #### [v1.6.0](https://github.com/philippdormann/uptime-kuma/compare/1.5.3...v1.6.0)
 
