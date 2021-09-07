@@ -16,6 +16,7 @@ README.md
 .stylelint*
 /.github
 package-lock.json
+yarn.lock
 app.json
 CODE_OF_CONDUCT.md
 CONTRIBUTING.md
