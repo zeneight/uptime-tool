@@ -2,7 +2,13 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
-#### [1.6.0](https://github.com/philippdormann/uptime-kuma/compare/1.5.3...1.6.0)
+#### [v1.6.1](https://github.com/philippdormann/uptime-kuma/compare/v1.6.0...v1.6.1)
+
+- the usual post-merge layout cleanups [`6e02beb`](https://github.com/philippdormann/uptime-kuma/commit/6e02beb3505efe951a44be31d76636da27a3afc7)
+
+#### [v1.6.0](https://github.com/philippdormann/uptime-kuma/compare/1.5.3...v1.6.0)
+
+> 7 September 2021
 
 - Auto login after setup [`#8`](https://github.com/philippdormann/uptime-kuma/pull/8)
 - Debian Dockerfile refactoring and improvements [`#347`](https://github.com/philippdormann/uptime-kuma/pull/347)
@@ -12,6 +18,7 @@ All notable changes to this project will be documented in this file. Dates are d
 - Notifications Content Improvements: SMTP, LunaSea, PushBullet [`#315`](https://github.com/philippdormann/uptime-kuma/pull/315)
 - Update & Improve Swedish Translation [`#332`](https://github.com/philippdormann/uptime-kuma/pull/332)
 - add release config [`72a3b60`](https://github.com/philippdormann/uptime-kuma/commit/72a3b60a364aaa1218bf7515b0302607d5896eec)
+- 🚀RELEASE v1.6.0 [`8f1599f`](https://github.com/philippdormann/uptime-kuma/commit/8f1599f4957c976f1b30986b6b489613a614e1a2)
 - 🧹 cleanups from merge [`7eeeffd`](https://github.com/philippdormann/uptime-kuma/commit/7eeeffd2cf0ad2fcb16f859dd4246e2704cd72ac)
 - WIP: Add tags functionality [`f31dc07`](https://github.com/philippdormann/uptime-kuma/commit/f31dc07d33f1089d7bf2d67f6c18ca072bb5c767)
 - 🚀RELEASE v1.4.0 [`ac0fd13`](https://github.com/philippdormann/uptime-kuma/commit/ac0fd1352df5338a4397059c3179be264f93e788)
