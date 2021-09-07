@@ -3,7 +3,7 @@
         <div>
             <h1 class="mb-3">{{ pageName }}</h1>
             <form @submit.prevent="submit">
-                <div class="shadow-box">
+                <div>
                     <div class="row">
                         <div class="col-md-6">
                             <h2 class="mb-2">{{ $t("General") }}</h2>
@@ -364,7 +364,7 @@ export default {
     @import "../assets/vars.scss";
 
     .multiselect__tags {
-        border-radius: 1.5rem;
+        // border-radius: 1.5rem;
         border: 1px solid #ced4da;
         min-height: 38px;
         padding: 6px 40px 0 8px;
@@ -383,7 +383,6 @@ export default {
     }
 
     .multiselect__tag {
-        border-radius: 50rem;
         margin-bottom: 0;
         padding: 6px 26px 6px 10px;
         background: $primary !important;

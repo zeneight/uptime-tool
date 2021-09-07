@@ -177,7 +177,7 @@ export default {
         border-radius: 50rem;
 
         &.empty {
-            background-color: aliceblue;
+            background-color: #969696;
         }
 
         &.down {

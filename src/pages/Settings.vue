@@ -166,9 +166,7 @@
 
             <footer>
                 <div class="container-fluid">
-                    Uptime Kuma -
-                    {{ $t("Version") }}: {{ $root.info.version }} -
-                    <a href="https://github.com/louislam/uptime-kuma/releases" target="_blank" rel="noopener">{{ $t("Check Update On GitHub") }}</a>
+                    Uptime Kuma v{{ $root.info.version }}
                 </div>
             </footer>
 
