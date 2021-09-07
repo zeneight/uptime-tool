@@ -2,8 +2,15 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v1.6.4](https://github.com/philippdormann/uptime-kuma/compare/v1.6.3...v1.6.4)
+
+- fix: docker port and yarn lock [`ff5446a`](https://github.com/philippdormann/uptime-kuma/commit/ff5446a7897914346e6397b13e8b060a09a2791e)
+
 #### [v1.6.3](https://github.com/philippdormann/uptime-kuma/compare/v1.6.2...v1.6.3)
 
+> 7 September 2021
+
+- 🚀RELEASE v1.6.3 [`fbac5cd`](https://github.com/philippdormann/uptime-kuma/commit/fbac5cdd93a0b02ce93f7763faf9ae95e3f5c502)
 - fix: ignore yarn.lock in dockerfile [`e2b8468`](https://github.com/philippdormann/uptime-kuma/commit/e2b846839a3d3eaa8a2b90eb2419555c31b6f5ca)
 
 #### [v1.6.2](https://github.com/philippdormann/uptime-kuma/compare/v1.6.1...v1.6.2)
