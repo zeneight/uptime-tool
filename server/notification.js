@@ -4,6 +4,8 @@ const FormData = require("form-data");
 const nodemailer = require("nodemailer");
 const child_process = require("child_process");
 
+const { UP, DOWN } = require("../src/util");
+
 class Notification {
 
     /**
@@ -80,7 +82,7 @@ class Notification {
             }
 
         } else if (notification.type === "smtp") {
-            return await Notification.smtp(notification, msg)
+            return await Notification.smtp(notification, msg, heartbeatJSON)
 
         } else if (notification.type === "discord") {
             try {
@@ -95,12 +97,25 @@ class Notification {
                     await axios.post(notification.discordWebhookUrl, discordtestdata)
                     return okMsg;
                 }
+
+                let url;
+
+                if (monitorJSON["type"] === "port") {
+                    url = monitorJSON["hostname"];
+                    if (monitorJSON["port"]) {
+                        url += ":" + monitorJSON["port"];
+                    }
+
+                } else {
+                    url = monitorJSON["url"];
+                }
+
                 // If heartbeatJSON is not null, we go into the normal alerting loop.
-                if (heartbeatJSON["status"] == 0) {
+                if (heartbeatJSON["status"] == DOWN) {
                     let discorddowndata = {
                         username: discordDisplayName,
                         embeds: [{
-                            title: "❌ One of your services went down. ❌",
+                            title: "❌ Your service " + monitorJSON["name"] + " went down. ❌",
                             color: 16711680,
                             timestamp: heartbeatJSON["time"],
                             fields: [
@@ -110,7 +125,7 @@ class Notification {
                                 },
                                 {
                                     name: "Service URL",
-                                    value: monitorJSON["url"],
+                                    value: url,
                                 },
                                 {
                                     name: "Time (UTC)",
@@ -126,7 +141,7 @@ class Notification {
                     await axios.post(notification.discordWebhookUrl, discorddowndata)
                     return okMsg;
 
-                } else if (heartbeatJSON["status"] == 1) {
+                } else if (heartbeatJSON["status"] == UP) {
                     let discordupdata = {
                         username: discordDisplayName,
                         embeds: [{
@@ -140,7 +155,7 @@ class Notification {
                                 },
                                 {
                                     name: "Service URL",
-                                    value: "[Visit Service](" + monitorJSON["url"] + ")",
+                                    value: url.startsWith("http") ? "[Visit Service](" + url + ")" : url,
                                 },
                                 {
                                     name: "Time (UTC)",
@@ -279,6 +294,150 @@ class Notification {
                 throwGeneralAxiosError(error)
             }
 
+        } else if (notification.type === "rocket.chat") {
+            try {
+                if (heartbeatJSON == null) {
+                    let data = {
+                        "text": "Uptime Kuma Rocket.chat testing successful.",
+                        "channel": notification.rocketchannel,
+                        "username": notification.rocketusername,
+                        "icon_emoji": notification.rocketiconemo,
+                    }
+                    await axios.post(notification.rocketwebhookURL, data)
+                    return okMsg;
+                }
+
+                const time = heartbeatJSON["time"];
+                let data = {
+                    "text": "Uptime Kuma Alert",
+                    "channel": notification.rocketchannel,
+                    "username": notification.rocketusername,
+                    "icon_emoji": notification.rocketiconemo,
+                    "attachments": [
+                        {
+                            "title": "Uptime Kuma Alert *Time (UTC)*\n" + time,
+                            "title_link": notification.rocketbutton,
+                            "text": "*Message*\n" + msg,
+                            "color": "#32cd32"
+                        }
+                    ]
+                }
+                await axios.post(notification.rocketwebhookURL, data)
+                return okMsg;
+            } catch (error) {
+                throwGeneralAxiosError(error)
+            }
+
+        } else if (notification.type === "mattermost") {
+            try {
+                const mattermostUserName = notification.mattermostusername || "Uptime Kuma";
+                // If heartbeatJSON is null, assume we're testing.
+                if (heartbeatJSON == null) {
+                    let mattermostTestData = {
+                        username: mattermostUserName,
+                        text: msg,
+                    }
+                    await axios.post(notification.mattermostWebhookUrl, mattermostTestData)
+                    return okMsg;
+                }
+
+                const mattermostChannel = notification.mattermostchannel;
+                const mattermostIconEmoji = notification.mattermosticonemo;
+                const mattermostIconUrl = notification.mattermosticonurl;
+
+                if (heartbeatJSON["status"] == DOWN) {
+                    let mattermostdowndata = {
+                        username: mattermostUserName,
+                        text: "Uptime Kuma Alert",
+                        channel: mattermostChannel,
+                        icon_emoji: mattermostIconEmoji,
+                        icon_url: mattermostIconUrl,
+                        attachments: [
+                            {
+                                fallback:
+                                    "Your " +
+                                    monitorJSON["name"] +
+                                    " service went down.",
+                                color: "#FF0000",
+                                title:
+                                    "❌ " +
+                                    monitorJSON["name"] +
+                                    " service went down. ❌",
+                                title_link: monitorJSON["url"],
+                                fields: [
+                                    {
+                                        short: true,
+                                        title: "Service Name",
+                                        value: monitorJSON["name"],
+                                    },
+                                    {
+                                        short: true,
+                                        title: "Time (UTC)",
+                                        value: heartbeatJSON["time"],
+                                    },
+                                    {
+                                        short: false,
+                                        title: "Error",
+                                        value: heartbeatJSON["msg"],
+                                    },
+                                ],
+                            },
+                        ],
+                    };
+                    await axios.post(
+                        notification.mattermostWebhookUrl,
+                        mattermostdowndata
+                    );
+                    return okMsg;
+                } else if (heartbeatJSON["status"] == UP) {
+                    let mattermostupdata = {
+                        username: mattermostUserName,
+                        text: "Uptime Kuma Alert",
+                        channel: mattermostChannel,
+                        icon_emoji: mattermostIconEmoji,
+                        icon_url: mattermostIconUrl,
+                        attachments: [
+                            {
+                                fallback:
+                                    "Your " +
+                                    monitorJSON["name"] +
+                                    " service went up!",
+                                color: "#32CD32",
+                                title:
+                                    "✅ " +
+                                    monitorJSON["name"] +
+                                    " service went up! ✅",
+                                title_link: monitorJSON["url"],
+                                fields: [
+                                    {
+                                        short: true,
+                                        title: "Service Name",
+                                        value: monitorJSON["name"],
+                                    },
+                                    {
+                                        short: true,
+                                        title: "Time (UTC)",
+                                        value: heartbeatJSON["time"],
+                                    },
+                                    {
+                                        short: false,
+                                        title: "Ping",
+                                        value: heartbeatJSON["ping"] + "ms",
+                                    },
+                                ],
+                            },
+                        ],
+                    };
+                    await axios.post(
+                        notification.mattermostWebhookUrl,
+                        mattermostupdata
+                    );
+                    return okMsg;
+                }
+            } catch (error) {
+                throwGeneralAxiosError(error);
+            }
+
         } else if (notification.type === "pushover") {
             let pushoverlink = "https://api.pushover.net/1/messages.json"
             try {
@@ -328,19 +487,19 @@ class Notification {
                     return okMsg;
                 }
 
-                if (heartbeatJSON["status"] == 0) {
+                if (heartbeatJSON["status"] == DOWN) {
                     let downdata = {
-                        "title": "UptimeKuma Alert:" + monitorJSON["name"],
-                        "body": "[🔴 Down]" + heartbeatJSON["msg"] + "\nTime (UTC):" + heartbeatJSON["time"],
+                        "title": "UptimeKuma Alert: " + monitorJSON["name"],
+                        "body": "[🔴 Down] " + heartbeatJSON["msg"] + "\nTime (UTC): " + heartbeatJSON["time"],
                     }
                     await axios.post(lunaseadevice, downdata)
                     return okMsg;
                 }
 
-                if (heartbeatJSON["status"] == 1) {
+                if (heartbeatJSON["status"] == UP) {
                     let updata = {
-                        "title": "UptimeKuma Alert:" + monitorJSON["name"],
-                        "body": "[✅ Up]" + heartbeatJSON["msg"] + "\nTime (UTC):" + heartbeatJSON["time"],
+                        "title": "UptimeKuma Alert: " + monitorJSON["name"],
+                        "body": "[✅ Up] " + heartbeatJSON["msg"] + "\nTime (UTC): " + heartbeatJSON["time"],
                     }
                     await axios.post(lunaseadevice, updata)
                     return okMsg;
@@ -366,18 +525,18 @@ class Notification {
                         "body": "Testing Successful.",
                     }
                     await axios.post(pushbulletUrl, testdata, config)
-                } else if (heartbeatJSON["status"] == 0) {
+                } else if (heartbeatJSON["status"] == DOWN) {
                     let downdata = {
                         "type": "note",
-                        "title": "UptimeKuma Alert:" + monitorJSON["name"],
-                        "body": "[🔴 Down]" + heartbeatJSON["msg"] + "\nTime (UTC):" + heartbeatJSON["time"],
+                        "title": "UptimeKuma Alert: " + monitorJSON["name"],
+                        "body": "[🔴 Down] " + heartbeatJSON["msg"] + "\nTime (UTC): " + heartbeatJSON["time"],
                     }
                     await axios.post(pushbulletUrl, downdata, config)
-                } else if (heartbeatJSON["status"] == 1) {
+                } else if (heartbeatJSON["status"] == UP) {
                     let updata = {
                         "type": "note",
-                        "title": "UptimeKuma Alert:" + monitorJSON["name"],
-                        "body": "[✅ Up]" + heartbeatJSON["msg"] + "\nTime (UTC):" + heartbeatJSON["time"],
+                        "title": "UptimeKuma Alert: " + monitorJSON["name"],
+                        "body": "[✅ Up] " + heartbeatJSON["msg"] + "\nTime (UTC): " + heartbeatJSON["time"],
                     }
                     await axios.post(pushbulletUrl, updata, config)
                 }
@@ -405,7 +564,7 @@ class Notification {
                         ]
                     }
                     await axios.post(lineAPIUrl, testMessage, config)
-                } else if (heartbeatJSON["status"] == 0) {
+                } else if (heartbeatJSON["status"] == DOWN) {
                     let downMessage = {
                         "to": notification.lineUserID,
                         "messages": [
@@ -416,7 +575,7 @@ class Notification {
                         ]
                     }
                     await axios.post(lineAPIUrl, downMessage, config)
-                } else if (heartbeatJSON["status"] == 1) {
+                } else if (heartbeatJSON["status"] == UP) {
                     let upMessage = {
                         "to": notification.lineUserID,
                         "messages": [
@@ -473,7 +632,7 @@ class Notification {
         await R.trash(bean)
     }
 
-    static async smtp(notification, msg) {
+    static async smtp(notification, msg, heartbeatJSON = null) {
 
         const config = {
             host: notification.smtpHost,
@@ -491,12 +650,17 @@ class Notification {
 
         let transporter = nodemailer.createTransport(config);
 
+        let bodyTextContent = msg;
+        if(heartbeatJSON) {
+            bodyTextContent = `${msg}\nTime (UTC): ${heartbeatJSON["time"]}`;
+        }
+
         // send mail with defined transport object
         await transporter.sendMail({
             from: `"Uptime Kuma" <${notification.smtpFrom}>`,
             to: notification.smtpTo,
             subject: msg,
-            text: msg,
+            text: bodyTextContent,
         });
 
         return "Sent Successfully.";

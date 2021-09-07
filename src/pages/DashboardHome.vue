@@ -5,7 +5,7 @@
                 {{ $t("Quick Stats") }}
             </h1>
 
-            <div class="shadow-box big-padding text-center">
+            <div class="shadow-box big-padding text-center mb-4">
                 <div class="row">
                     <div class="col">
                         <h3>{{ $t("Up") }}</h3>
@@ -20,7 +20,7 @@
                         <span class="num text-secondary">{{ stats.unknown }}</span>
                     </div>
                     <div class="col">
-                        <h3>{{ $t("Pause") }}</h3>
+                        <h3>{{ $t("pauseDashboardHome") }}</h3>
                         <span class="num text-secondary">{{ stats.pause }}</span>
                     </div>
                 </div>
@@ -170,7 +170,6 @@ export default {
 
 .shadow-box {
     padding: 20px;
-    margin-top: 25px;
 }
 
 table {

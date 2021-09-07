@@ -166,7 +166,7 @@ fi
   cd $installPath
   git clone https://github.com/louislam/uptime-kuma.git .
   npm run setup
-  pm2 start npm --name uptime-kuma -- run start-server -- --port=$port
+  pm2 start server/server.js --name uptime-kuma -- --port=$port
 else
   defaultVolume="uptime-kuma"
   check=$(docker -v)
@@ -176,8 +176,8 @@ else
 fi
   check=$(docker info)
   if [[ "$check" == *"Is the docker daemon running"* ]]; then
-      echo "Error: docker is not running"
-      exit 1
+      "echo" "Error: docker is not running"
+      "exit" "1"
     fi
   if [ "$3" != "" ]; then
     port="$3"

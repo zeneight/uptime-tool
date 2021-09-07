@@ -4,6 +4,7 @@ const { R } = require("redbean-node");
 const { debug } = require("../src/util");
 const passwordHash = require("./password-hash");
 const dayjs = require("dayjs");
+const { Resolver } = require("dns");
 
 /**
  * Init or reset JWT secret
@@ -74,6 +75,30 @@ exports.pingAsync = function (hostname, ipv6 = false) {
             }
         });
     });
+}
+
+exports.dnsResolve = function (hostname, resolver_server, rrtype) {
+    const resolver = new Resolver();
+    resolver.setServers([resolver_server]);
+    return new Promise((resolve, reject) => {
+        if (rrtype == "PTR") {
+            resolver.reverse(hostname, (err, records) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(records);
+                }
+            });
+        } else {
+            resolver.resolve(hostname, rrtype, (err, records) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(records);
+                }
+            });
+        }
+    })
 }
 
 exports.setting = async function (key) {
@@ -222,4 +247,27 @@ exports.checkStatusCode = function (status, accepted_codes) {
     }
 
     return false;
+}
+
+exports.getTotalClientInRoom = (io, roomName) => {
+
+    const sockets = io.sockets;
+
+    if (! sockets) {
+        return 0;
+    }
+
+    const adapter = sockets.adapter;
+
+    if (! adapter) {
+        return 0;
+    }
+
+    const room = adapter.rooms.get(roomName);
+
+    if (room) {
+        return room.size;
+    } else {
+        return 0;
+    }
 }

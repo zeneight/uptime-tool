@@ -8,7 +8,11 @@
                 <span v-if="monitor.type === 'ping'">Ping: {{ monitor.hostname }}</span>
                 <span v-if="monitor.type === 'keyword'">
                     <br>
-                    <span>Keyword:</span> <span class="keyword">{{ monitor.keyword }}</span>
+                    <span>{{ $t("Keyword") }}:</span> <span class="keyword">{{ monitor.keyword }}</span>
+                </span>
+                <span v-if="monitor.type === 'dns'">[{{ monitor.dns_resolve_type }}] {{ monitor.hostname }}
+                    <br>
+                    <span>{{ $t("Last Result") }}:</span> <span class="keyword">{{ monitor.dns_last_result }}</span>
                 </span>
             </p>
 
@@ -80,7 +84,7 @@
                 <div v-if="showCertInfoBox" class="shadow-box big-padding text-center">
                     <div class="row">
                         <div class="col">
-                            <h4>Certificate Info</h4>
+                            <h4>{{ $t("Certificate Info") }}</h4>
                             <table class="text-start">
                                 <tbody>
                                     <tr class="my-3">
@@ -129,6 +133,23 @@
             </div>
 
             <div class="shadow-box table-shadow-box">
+                <div class="dropdown dropdown-clear-data">
+                    <button class="btn btn-sm btn-outline-danger dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <font-awesome-icon icon="trash" /> {{ $t("Clear Data") }}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <button type="button" class="dropdown-item" @click="clearEventsDialog">
+                                {{ $t("Events") }}
+                            </button>
+                        </li>
+                        <li>
+                            <button type="button" class="dropdown-item" @click="clearHeartbeatsDialog">
+                                {{ $t("Heartbeats") }}
+                            </button>
+                        </li>
+                    </ul>
+                </div>
                 <table class="table table-borderless table-hover">
                     <thead>
                         <tr>
@@ -161,12 +182,20 @@
                 </div>
             </div>
 
-            <Confirm ref="confirmPause" @yes="pauseMonitor">
-                Are you sure want to pause?
+            <Confirm ref="confirmPause" :yes-text="$t('Yes')" :no-text="$t('No')" @yes="pauseMonitor">
+                {{ $t("pauseMonitorMsg") }}
             </Confirm>
 
-            <Confirm ref="confirmDelete" btn-style="btn-danger" @yes="deleteMonitor">
-                Are you sure want to delete this monitor?
+            <Confirm ref="confirmDelete" btn-style="btn-danger" :yes-text="$t('Yes')" :no-text="$t('No')" @yes="deleteMonitor">
+                {{ $t("deleteMonitorMsg") }}
+            </Confirm>
+
+            <Confirm ref="confirmClearEvents" btn-style="btn-danger" :yes-text="$t('Yes')" :no-text="$t('No')" @yes="clearEvents">
+                {{ $t("clearEventsMsg") }}
+            </Confirm>
+
+            <Confirm ref="confirmClearHeartbeats" btn-style="btn-danger" :yes-text="$t('Yes')" :no-text="$t('No')" @yes="clearHeartbeats">
+                {{ $t("clearHeartbeatsMsg") }}
             </Confirm>
         </div>
     </transition>
@@ -234,7 +263,7 @@ export default {
                 return this.lastHeartBeat.ping;
             }
 
-            return "N/A"
+            return this.$t("notAvailableShort")
         },
 
         avgPing() {
@@ -242,11 +271,12 @@ export default {
                 return this.$root.avgPingList[this.monitor.id];
             }
 
-            return "N/A"
+            return this.$t("notAvailableShort")
         },
 
         importantHeartBeatList() {
             if (this.$root.importantHeartbeatList[this.monitor.id]) {
+                // eslint-disable-next-line vue/no-side-effects-in-computed-properties
                 this.heartBeatList = this.$root.importantHeartbeatList[this.monitor.id];
                 return this.$root.importantHeartbeatList[this.monitor.id]
             }
@@ -309,6 +339,14 @@ export default {
             this.$refs.confirmDelete.show();
         },
 
+        clearEventsDialog() {
+            this.$refs.confirmClearEvents.show();
+        },
+
+        clearHeartbeatsDialog() {
+            this.$refs.confirmClearHeartbeats.show();
+        },
+
         deleteMonitor() {
             this.$root.deleteMonitor(this.monitor.id, (res) => {
                 if (res.ok) {
@@ -320,6 +358,21 @@ export default {
             })
         },
 
+        clearEvents() {
+            this.$root.clearEvents(this.monitor.id, (res) => {
+                if (! res.ok) {
+                    toast.error(res.msg);
+                }
+            })
+        },
+
+        clearHeartbeats() {
+            this.$root.clearHeartbeats(this.monitor.id, (res) => {
+                if (! res.ok) {
+                    toast.error(res.msg);
+                }
+            })
+        },
     },
 }
 </script>
@@ -336,15 +389,19 @@ export default {
 @media (max-width: 550px) {
     .functions {
         text-align: center;
-    }
 
-    button, a {
-        margin-left: 10px !important;
-        margin-right: 10px !important;
+        button, a {
+            margin-left: 10px !important;
+            margin-right: 10px !important;
+        }
     }
 
     .ping-chart-wrapper {
         padding: 10px !important;
+    }
+
+    .dropdown-clear-data {
+        margin-bottom: 10px;
     }
 }
 
@@ -359,6 +416,13 @@ export default {
     a.btn {
         padding-left: 25px;
         padding-right: 25px;
+    }
+
+    .dropdown-clear-data {
+        button {
+            display: block;
+            padding-top: 4px;
+        }
     }
 }
 
@@ -413,9 +477,30 @@ table {
     color: black;
 }
 
+.dropdown-clear-data {
+    float: right;
+}
+
 .dark {
     .keyword {
         color: #0a0a0a;
     }
+
+    .dropdown-clear-data {
+        ul {
+            background-color: $dark-bg;
+            border-color: $dark-bg2;
+            border-width: 2px;
+
+            li button {
+                color: $dark-font-color;
+            }
+
+            li button:hover {
+                background-color: $dark-bg2;
+            }
+        }
+    }
 }
+
 </style>

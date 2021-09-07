@@ -20,12 +20,14 @@
                                 <option value="signal">Signal</option>
                                 <option value="gotify">Gotify</option>
                                 <option value="slack">Slack</option>
+                                <option value="rocket.chat">Rocket.chat</option>
                                 <option value="pushover">Pushover</option>
                                 <option value="pushy">Pushy</option>
                                 <option value="octopush">Octopush</option>
                                 <option value="lunasea">LunaSea</option>
                                 <option value="pushbullet">Pushbullet</option>
                                 <option value="line">Line Messenger</option>
+                                <option value="mattermost">Mattermost</option>
                             </select>
                         </div>
 
@@ -37,7 +39,7 @@
                         <template v-if="notification.type === 'telegram'">
                             <div class="mb-3">
                                 <label for="telegram-bot-token" class="form-label">Bot Token</label>
-                                <input id="telegram-bot-token" v-model="notification.telegramBotToken" type="text" class="form-control" required>
+                                <HiddenInput id="telegram-bot-token" v-model="notification.telegramBotToken" :required="true" :readonly="true"></HiddenInput>
                                 <div class="form-text">
                                     You can get a token from <a href="https://t.me/BotFather" target="_blank">https://t.me/BotFather</a>.
                                 </div>
@@ -127,7 +129,7 @@
 
                             <div class="mb-3">
                                 <label for="password" class="form-label">Password</label>
-                                <input id="password" v-model="notification.smtpPassword" type="password" class="form-control" autocomplete="false">
+                                <HiddenInput id="password" v-model="notification.smtpPassword" :required="true" autocomplete="false"></HiddenInput>
                             </div>
 
                             <div class="mb-3">
@@ -192,7 +194,7 @@
                         <template v-if="notification.type === 'gotify'">
                             <div class="mb-3">
                                 <label for="gotify-application-token" class="form-label">Application Token</label>
-                                <input id="gotify-application-token" v-model="notification.gotifyapplicationToken" type="text" class="form-control" required>
+                                <HiddenInput id="gotify-application-token" v-model="notification.gotifyapplicationToken" :required="true"></HiddenInput>
                             </div>
                             <div class="mb-3">
                                 <label for="gotify-server-url" class="form-label">Server URL</label>
@@ -237,16 +239,79 @@
                             </div>
                         </template>
 
+                        <template v-if="notification.type === 'rocket.chat'">
+                            <div class="mb-3">
+                                <label for="rocket-webhook-url" class="form-label">Webhook URL<span style="color: red;"><sup>*</sup></span></label>
+                                <input id="rocket-webhook-url" v-model="notification.rocketwebhookURL" type="text" class="form-control" required>
+                                <label for="rocket-username" class="form-label">Username</label>
+                                <input id="rocket-username" v-model="notification.rocketusername" type="text" class="form-control">
+                                <label for="rocket-iconemo" class="form-label">Icon Emoji</label>
+                                <input id="rocket-iconemo" v-model="notification.rocketiconemo" type="text" class="form-control">
+                                <label for="rocket-channel" class="form-label">Channel Name</label>
+                                <input id="rocket-channel-name" v-model="notification.rocketchannel" type="text" class="form-control">
+                                <label for="rocket-button-url" class="form-label">Uptime Kuma URL</label>
+                                <input id="rocket-button" v-model="notification.rocketbutton" type="text" class="form-control">
+                                <div class="form-text">
+                                    <span style="color: red;"><sup>*</sup></span>Required
+                                    <p style="margin-top: 8px;">
+                                        More info about webhooks on: <a href="https://docs.rocket.chat/guides/administration/administration/integrations" target="_blank">https://api.slack.com/messaging/webhooks</a>
+                                    </p>
+                                    <p style="margin-top: 8px;">
+                                        Enter the channel name on Rocket.chat Channel Name field if you want to bypass the webhook channel. Ex: #other-channel
+                                    </p>
+                                    <p style="margin-top: 8px;">
+                                        If you leave the Uptime Kuma URL field blank, it will default to the Project Github page.
+                                    </p>
+                                    <p style="margin-top: 8px;">
+                                        Emoji cheat sheet: <a href="https://www.webfx.com/tools/emoji-cheat-sheet/" target="_blank">https://www.webfx.com/tools/emoji-cheat-sheet/</a>
+                                    </p>
+                                </div>
+                            </div>
+                        </template>
+
+                        <template v-if="notification.type === 'mattermost'">
+                            <div class="mb-3">
+                                <label for="mattermost-webhook-url" class="form-label">Webhook URL<span style="color:red;"><sup>*</sup></span></label>
+                                <input id="mattermost-webhook-url" v-model="notification.mattermostWebhookUrl" type="text" class="form-control" required>
+                                <label for="mattermost-username" class="form-label">Username</label>
+                                <input id="mattermost-username" v-model="notification.mattermostusername" type="text" class="form-control">
+                                <label for="mattermost-iconurl" class="form-label">Icon URL</label>
+                                <input id="mattermost-iconurl" v-model="notification.mattermosticonurl" type="text" class="form-control">
+                                <label for="mattermost-iconemo" class="form-label">Icon Emoji</label>
+                                <input id="mattermost-iconemo" v-model="notification.mattermosticonemo" type="text" class="form-control">
+                                <label for="mattermost-channel" class="form-label">Channel Name</label>
+                                <input id="mattermost-channel-name" v-model="notification.mattermostchannel" type="text" class="form-control">
+                                <div class="form-text">
+                                    <span style="color:red;"><sup>*</sup></span>Required
+                                    <p style="margin-top: 8px;">
+                                        More info about webhooks on: <a href="https://docs.mattermost.com/developer/webhooks-incoming.html" target="_blank">https://docs.mattermost.com/developer/webhooks-incoming.html</a>
+                                    </p>
+                                    <p style="margin-top: 8px;">
+                                        You can override the default channel that webhook posts to by entering the channel name into "Channel Name" field. This needs to be enabled in Mattermost webhook settings. Ex: #other-channel
+                                    </p>
+                                    <p style="margin-top: 8px;">
+                                        If you leave the Uptime Kuma URL field blank, it will default to the Project Github page.
+                                    </p>
+                                    <p style="margin-top: 8px;">
+                                        You can provide a link to a picture in "Icon URL" to override the default profile picture. Will not be used if Icon Emoji is set.
+                                    </p>
+                                    <p style="margin-top: 8px;">
+                                        Emoji cheat sheet: <a href="https://www.webfx.com/tools/emoji-cheat-sheet/" target="_blank">https://www.webfx.com/tools/emoji-cheat-sheet/</a> Note: emoji takes preference over Icon URL.
+                                    </p>
+                                </div>
+                            </div>
+                        </template>
+
                         <template v-if="notification.type === 'pushy'">
                             <div class="mb-3">
                                 <label for="pushy-app-token" class="form-label">API_KEY</label>
-                                <input id="pushy-app-token" v-model="notification.pushyAPIKey" type="text" class="form-control" required>
+                                <HiddenInput id="pushy-app-token" v-model="notification.pushyAPIKey" :required="true"></HiddenInput>
                             </div>
 
                             <div class="mb-3">
                                 <label for="pushy-user-key" class="form-label">USER_TOKEN</label>
                                 <div class="input-group mb-3">
-                                    <input id="pushy-user-key" v-model="notification.pushyToken" type="text" class="form-control" required>
+                                    <HiddenInput id="pushy-user-key" v-model="notification.pushyToken" :required="true"></HiddenInput>
                                 </div>
                             </div>
                             <p style="margin-top: 8px;">
@@ -257,7 +322,7 @@
                         <template v-if="notification.type === 'octopush'">
                             <div class="mb-3">
                                 <label for="octopush-key" class="form-label">API KEY</label>
-                                <input id="octopush-key" v-model="notification.octopushAPIKey" type="text" class="form-control" required>
+                                <HiddenInput id="octopush-key" v-model="notification.octopushAPIKey" :required="true"></HiddenInput>
                                 <label for="octopush-login" class="form-label">API LOGIN</label>
                                 <input id="octopush-login" v-model="notification.octopushLogin" type="text" class="form-control" required>
                             </div>
@@ -288,9 +353,9 @@
                         <template v-if="notification.type === 'pushover'">
                             <div class="mb-3">
                                 <label for="pushover-user" class="form-label">User Key<span style="color: red;"><sup>*</sup></span></label>
-                                <input id="pushover-user" v-model="notification.pushoveruserkey" type="text" class="form-control" required>
+                                <HiddenInput id="pushover-user" v-model="notification.pushoveruserkey" :required="true"></HiddenInput>
                                 <label for="pushover-app-token" class="form-label">Application Token<span style="color: red;"><sup>*</sup></span></label>
-                                <input id="pushover-app-token" v-model="notification.pushoverapptoken" type="text" class="form-control" required>
+                                <HiddenInput id="pushover-app-token" v-model="notification.pushoverapptoken" :required="true"></HiddenInput>
                                 <label for="pushover-device" class="form-label">Device</label>
                                 <input id="pushover-device" v-model="notification.pushoverdevice" type="text" class="form-control">
                                 <label for="pushover-device" class="form-label">Message Title</label>
@@ -356,7 +421,7 @@
                         <template v-if="notification.type === 'pushbullet'">
                             <div class="mb-3">
                                 <label for="pushbullet-access-token" class="form-label">Access Token</label>
-                                <input id="pushbullet-access-token" v-model="notification.pushbulletAccessToken" type="text" class="form-control" required>
+                                <HiddenInput id="pushbullet-access-token" v-model="notification.pushbulletAccessToken" :required="true"></HiddenInput>
                             </div>
 
                             <p style="margin-top: 8px;">
@@ -367,7 +432,7 @@
                         <template v-if="notification.type === 'line'">
                             <div class="mb-3">
                                 <label for="line-channel-access-token" class="form-label">Channel access token</label>
-                                <input id="line-channel-access-token" v-model="notification.lineChannelAccessToken" type="text" class="form-control" required>
+                                <HiddenInput id="line-channel-access-token" v-model="notification.lineChannelAccessToken" :required="true"></HiddenInput>
                             </div>
                             <div class="form-text">
                                 Line Developers Console - <b>Basic Settings</b>
@@ -400,8 +465,8 @@
         </div>
     </form>
 
-    <Confirm ref="confirmDelete" btn-style="btn-danger" @yes="deleteNotification">
-        Are you sure want to delete this notification for all monitors?
+    <Confirm ref="confirmDelete" btn-style="btn-danger" :yes-text="$t('Yes')" :no-text="$t('No')" @yes="deleteNotification">
+        {{ $t("deleteNotificationMsg") }}
     </Confirm>
 </template>
 
@@ -411,11 +476,13 @@ import { ucfirst } from "../util.ts"
 import axios from "axios";
 import { useToast } from "vue-toastification"
 import Confirm from "./Confirm.vue";
+import HiddenInput from "./HiddenInput.vue";
 const toast = useToast()
 
 export default {
     components: {
         Confirm,
+        HiddenInput,
     },
     props: {},
     data() {

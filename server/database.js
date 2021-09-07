@@ -5,16 +5,14 @@ const { setSetting, setting } = require("./util-server");
 class Database {
 
     static templatePath = "./db/kuma.db"
-    static path = "./data/kuma.db";
-    static latestVersion = 6;
+    static dataDir;
+    static path;
+    static latestVersion = 8;
     static noReject = true;
     static sqliteInstance = null;
 
     static async connect() {
         const acquireConnectionTimeout = 120 * 1000;
-
-        R.useBetterSQLite3 = true;
-        R.betterSQLite3Options.timeout = acquireConnectionTimeout;
 
         R.setup("sqlite", {
             filename: Database.path,
@@ -59,7 +57,7 @@ class Database {
             console.info("Database patch is needed")
 
             console.info("Backup the db")
-            const backupPath = "./data/kuma.db.bak" + version;
+            const backupPath = this.dataDir + "kuma.db.bak" + version;
             fs.copyFileSync(Database.path, backupPath);
 
             const shmPath = Database.path + "-shm";
@@ -124,11 +122,8 @@ class Database {
                 return statement !== "";
             })
 
-        // Use better-sqlite3 to run, prevent "This statement does not return data. Use run() instead"
-        const db = await this.getBetterSQLite3Database();
-
         for (let statement of statements) {
-            db.prepare(statement).run();
+            await R.exec(statement);
         }
     }
 
