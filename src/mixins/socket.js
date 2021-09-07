@@ -265,6 +265,10 @@ export default {
         clearStatistics(callback) {
             socket.emit("clearStatistics", callback)
         },
+
+        uploadBackup(uploadedJSON, callback) {
+            socket.emit("uploadBackup", uploadedJSON, callback)
+        },
     },
 
     computed: {
