@@ -213,7 +213,7 @@ footer {
     }
 
     .bottom-nav {
-        background-color: $dark-bg;
+        background-color: #0a0a0a;
     }
 }
 

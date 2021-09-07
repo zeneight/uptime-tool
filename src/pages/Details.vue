@@ -415,7 +415,7 @@ table {
 
 .dark {
     .keyword {
-        color: $dark-font-color;
+        color: #0a0a0a;
     }
 }
 </style>

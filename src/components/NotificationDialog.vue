@@ -557,7 +557,7 @@ export default {
 
 .dark {
     .modal-dialog .form-text, .modal-dialog p {
-        color: $dark-font-color;
+        color: #0a0a0a;
     }
 }
 </style>
