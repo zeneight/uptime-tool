@@ -264,7 +264,7 @@
                 <Editable v-model="config.footerText" tag="div" :contenteditable="enableEditMode" :noNL="false" class="alert-heading p-2" />
 
                 <p v-if="config.showPoweredBy">
-                    {{ $t("Powered by") }} <a target="_blank" href="https://github.com/louislam/uptime-kuma">{{ $t("Uptime Kuma" ) }}</a>
+                    {{ $t("Powered by") }} <a target="_blank" href="https://github.com/kominfo-denpasar">{{ $t("Kominfo Denpasar" ) }}</a>
                 </p>
             </footer>
         </div>
