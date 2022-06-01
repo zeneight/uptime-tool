@@ -77,9 +77,9 @@ export default {
                 general: {
                     title: this.$t("General"),
                 },
-                appearance: {
+                /* appearance: {
                     title: this.$t("Appearance"),
-                },
+                }, */
                 notifications: {
                     title: this.$t("Notifications"),
                 },
